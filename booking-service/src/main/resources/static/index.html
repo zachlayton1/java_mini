@@ -1,0 +1,237 @@
+<!-- booking-service/src/main/resources/static/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Hospitality Mini – Demo UI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          sans-serif;
+      }
+      body {
+        margin: 2rem;
+        max-width: 900px;
+      }
+      h1 {
+        font-size: 1.6rem;
+        margin-bottom: 0.25rem;
+      }
+      .muted {
+        color: #666;
+        margin-bottom: 1rem;
+      }
+      .card {
+        border: 1px solid #e6e6e6;
+        border-radius: 12px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin: 0.5rem 0 0.25rem;
+      }
+      input {
+        width: 100%;
+        padding: 0.5rem 0.6rem;
+        border: 1px solid #d0d0d0;
+        border-radius: 8px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.75rem;
+      }
+      .actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+      }
+      button {
+        padding: 0.55rem 0.8rem;
+        border-radius: 8px;
+        border: 1px solid #d0d0d0;
+        background: #fafafa;
+        cursor: pointer;
+      }
+      button.primary {
+        background: #111;
+        color: #fff;
+        border-color: #111;
+      }
+      pre {
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 0.8rem;
+        border-radius: 8px;
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border-bottom: 1px solid #eee;
+        text-align: left;
+        padding: 0.5rem;
+      }
+      small.code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        background: #f5f5f5;
+        padding: 0.1rem 0.3rem;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Hospitality Mini</h1>
+    <div class="muted">
+      Quick demo UI for creating bookings and checking availability.
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="roomId">Room ID</label>
+          <input id="roomId" value="deluxe-101" />
+        </div>
+        <div>
+          <label for="startDate">Start Date</label>
+          <input id="startDate" type="date" value="2025-01-20" />
+        </div>
+        <div>
+          <label for="endDate">End Date</label>
+          <input id="endDate" type="date" value="2025-01-22" />
+        </div>
+      </div>
+
+      <div class="row" style="grid-template-columns: 1fr 1fr">
+        <div>
+          <label for="user">Username</label>
+          <input id="user" value="user" />
+        </div>
+        <div>
+          <label for="pass">Password</label>
+          <input id="pass" value="password" type="password" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="btnBook">Create Booking</button>
+        <button id="btnAvail">Check Availability</button>
+        <button id="btnHealth">Health</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <strong>Response</strong>
+      <pre id="out">{}</pre>
+    </div>
+
+    <div class="card">
+      <strong>Availability (table)</strong>
+      <table id="availTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Total</th>
+            <th>Booked</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="muted" id="availHint">
+        Run “Check Availability” to populate.
+      </div>
+    </div>
+
+    <script>
+      const OUT = document.getElementById("out");
+      const AVT = document.getElementById("availTable").querySelector("tbody");
+      const AVH = document.getElementById("availHint");
+
+      function b64(u, p) {
+        return "Basic " + btoa(`${u}:${p}`);
+      }
+      function val(id) {
+        return document.getElementById(id).value.trim();
+      }
+      function setOut(obj) {
+        OUT.textContent =
+          typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+      }
+      function qs(params) {
+        return new URLSearchParams(params).toString();
+      }
+
+      async function call(url, options = {}) {
+        const res = await fetch(url, options);
+        const text = await res.text();
+        let body;
+        try {
+          body = JSON.parse(text);
+        } catch {
+          body = text;
+        }
+        return { ok: res.ok, status: res.status, body };
+      }
+
+      function authHeaders() {
+        return { Authorization: b64(val("user"), val("pass")) };
+      }
+
+      document.getElementById("btnBook").onclick = async () => {
+        const q = qs({
+          roomId: val("roomId"),
+          startDate: val("startDate"),
+          endDate: val("endDate"),
+        });
+        const url = `http://localhost:8085/api/bookings?${q}`;
+        const res = await call(url, {
+          method: "POST",
+          headers: { ...authHeaders() },
+        });
+        setOut(res);
+      };
+
+      document.getElementById("btnAvail").onclick = async () => {
+        const room = encodeURIComponent(val("roomId"));
+        const q = qs({ startDate: val("startDate"), endDate: val("endDate") });
+        const url = `http://localhost:8086/api/availability/${room}?${q}`;
+        const res = await call(url, { headers: { ...authHeaders() } });
+        setOut(res);
+
+        // Render simple table if body looks like a list of per-day availability rows
+        AVT.innerHTML = "";
+        const rows = Array.isArray(res.body) ? res.body : res.body?.days || [];
+        if (rows.length) {
+          rows.forEach((r) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<td>${r.availableDate || r.date || ""}</td>
+                          <td>${r.totalRooms ?? r.total ?? ""}</td>
+                          <td>${r.bookedRooms ?? r.booked ?? ""}</td>`;
+            AVT.appendChild(tr);
+          });
+          AVH.style.display = "none";
+        } else {
+          AVH.style.display = "block";
+        }
+      };
+
+      document.getElementById("btnHealth").onclick = async () => {
+        const h1 = await call(`http://localhost:8085/actuator/health`);
+        const h2 = await call(`http://localhost:8086/actuator/health`);
+        setOut({ booking: h1, availability: h2 });
+      };
+    </script>
+  </body>
+</html>

@@ -225,10 +225,39 @@ docker exec -it hotel_mini-postgres-1 psql -U postgres -d hotel -c "SET search_p
 
 ---
 
+## Minimal Frontend UI
+
+A lightweight demo UI is included to interact with the APIs without needing Postman or cURL.
+
+- **Location:** `booking-service/src/main/resources/static/index.html`
+- **URL:** <http://localhost:8085/index.html> (served by `booking-service`)
+
+### Features
+
+- Create a booking (fires a Redis Stream event)
+- Check availability (renders a per-day table)
+- View health of both services
+
+### Tech
+
+- **Plain HTML + Fetch API** (no React / Angular / Ember)
+- **Zero build step** (runs directly in the browser)
+- Works with existing **HTTP Basic Auth** credentials (`user / password`)
+
+### Usage
+
+1. Start the stack:
+   ```bash
+   docker compose up -d --build
+   ```
+
+---
+
 ## What’s inside (quick)
 
 - **booking-service**: REST + JPA + publish to Redis Stream
 - **availability-service**: Redis Stream consumer + idempotent updater
+- **Minimal frontend UI**: static HTML/JS page served from booking-service (`/index.html`)
 - **Flyway** migrations (per module)
 - **Basic tests** (unit + MVC slice), **CI workflow**
 - **Actuator** + **OpenAPI**
@@ -247,3 +276,4 @@ docker exec -it hotel_mini-postgres-1 psql -U postgres -d hotel -c "SET search_p
 | **Code + Issues (Git repo)**       | Bitbucket / GitHub / GitLab + Jira + Confluence | Repo + issue tracking + documentation integration                          |
 | **Support**                        | ServiceNow                                      | Incidents and service requests flow into ITSM platforms                    |
 | **Logs & Metrics**                 | Splunk / Elasticsearch / Prometheus / Grafana   | Actuator + OpenTelemetry metrics/logs integrate seamlessly                 |
+| **Minimal frontend UI (HTML/JS)**  | Angular / React / Ember frontends               | Exposes clean REST + OpenAPI; easily consumable by modern SPAs             |
